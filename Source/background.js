@@ -227,22 +227,35 @@ chrome.contextMenus?.onClicked?.addListener((info, tab) => {
   if (parts.length < 3) return; // require Service + Action
   const serviceId = parts[1];
   const actionId = parts[2];
+  const selectedText = info.selectionText?.trim();
+  if (!selectedText) return;
 
-  const payload = {
-    serviceId,
-    actionId,
-    text: info.selectionText || '',
-    pageUrl: tab?.url,
-    pageTitle: tab?.title,
-  };
+  const service = SERVICE_PRESETS.find((s) => s.id === serviceId);
+  if (!service) return;
 
-  if (tab?.id) {
-    openSidePanelForTab(tab).then(() => sendCustomServiceToPanel(payload));
+  const normalized = normalizeSettings(cachedCustomServiceSettings);
+  const action = getAllActions(normalized).find((a) => a.id === actionId);
+  if (!action) return;
+
+  const baseUrl = service.id === 'custom' ? normalized.customBaseUrl : service.url;
+  if (!baseUrl) return;
+
+  const url = buildServiceUrl(baseUrl, selectedText, { action: actionId, service: serviceId });
+  if (!url) return;
+
+  // Send to side panel
+  sendCustomServiceToPanel({ url, label: service.label, action: action.label });
+
+  // Open side panel
+  if (tab) {
+    openSidePanelForTab(tab);
   }
 });
 
-// --- НОВЫЙ ОБРАБОТЧИК ДЛЯ ТРАНСКРИПТА ---
+// --- ОБРАБОТЧИК ДЛЯ ТРАНСКРИПТА YouTube ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('Message received in background:', request);
+    
     if (request.action === 'getTranscript') {
         const videoId = request.videoId;
         if (!videoId) {
@@ -250,15 +263,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
         }
 
+        console.log('Fetching transcript for video:', videoId);
+        
         fetchYouTubeTranscript(videoId)
             .then(transcript => {
+                console.log('Transcript fetched, length:', transcript?.length || 0);
                 sendResponse({ success: true, transcript });
             })
             .catch(error => {
-                sendResponse({ success: false, error: error.message });
+                console.error('Error fetching transcript:', error);
+                sendResponse({ success: false, error: error.message || 'Ошибка получения транскрипта' });
             });
         return true; // Сохраняем канал открытым для асинхронного ответа
     }
 });
 
-console.log('AI Side Panel Extension loaded');
+console.log('AI Side Panel Service Worker loaded');
