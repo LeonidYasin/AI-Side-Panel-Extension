@@ -6,11 +6,16 @@
   "permissions": [
     "sidePanel",
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage",
+    "contextMenus",
+    "declarativeNetRequest"
   ],
   "host_permissions": [
     "https://chat.deepseek.com/*",
-    "https://www.youtube.com/*"
+    "https://www.youtube.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -21,5 +26,17 @@
   },
   "action": {
     "default_title": "AI Side Panel"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   }
 }
