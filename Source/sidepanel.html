@@ -1,489 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Side Panel</title>
-    <script src="fouc.js"></script>
-    <link rel="stylesheet" href="sidepanel-modular.css" />
     <style>
-      #onboarding-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
-        background: #0f0f0f;
-        display: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        overflow: hidden;
-      }
-      #onboarding-overlay.visible {
-        display: flex;
-        opacity: 1;
-      }
-      #onboarding-overlay iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-        flex: 1;
-      }
-      .onboarding-tour-btn {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        width: 100%;
-        padding: 10px 14px;
-        margin: 4px 0 0;
-        border: 1.5px solid rgba(255,255,255,0.1);
-        border-radius: 10px;
-        background: transparent;
-        font-size: 13px;
-        font-weight: 500;
-        color: #a0a0a0;
-        cursor: pointer;
-        font-family: inherit;
-        transition: border-color 0.2s, background 0.2s, color 0.2s;
-        text-align: left;
-      }
-      .onboarding-tour-btn:hover {
-        border-color: #00ffaa;
-        background: rgba(0,255,170,0.07);
-        color: #00ffaa;
-      }
-      .onboarding-tour-btn:hover svg { color: #00ffaa; }
-      .onboarding-tour-btn svg {
-        width: 15px;
-        height: 15px;
-        color: #555555;
-        flex-shrink: 0;
-        transition: color 0.2s;
-      }
-      .known-issues-btn {
-        margin-top: 8px;
-        border-color: rgba(255, 173, 51, 0.28);
-        color: #ccb589;
-      }
-      .known-issues-btn:hover {
-        border-color: #ffad33;
-        background: rgba(255, 173, 51, 0.08);
-        color: #ffbf5e;
-      }
-      .known-issues-btn:hover svg { color: #ffad33; }
-      #known-issues-modal {
-        position: fixed;
-        inset: 0;
-        z-index: 10000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        background: rgba(4, 7, 10, 0.74);
-        -webkit-backdrop-filter: blur(2px);
-        backdrop-filter: blur(2px);
-      }
-      #known-issues-modal.visible {
-        display: flex;
-      }
-      .known-issues-card {
-        width: min(460px, 100%);
-        max-height: min(76vh, 620px);
-        overflow: auto;
-        padding: 16px;
-        border: 1px solid rgba(255, 173, 51, 0.2);
-        border-radius: 12px;
-        background: #17191c;
-        color: #d2d7de;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
-      }
-      .known-issues-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 10px;
-      }
-      .known-issues-title {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 600;
-        color: #f2c878;
-      }
-      .known-issues-close-btn {
-        border: 1px solid rgba(255, 173, 51, 0.34);
-        border-radius: 8px;
-        padding: 4px 10px;
-        background: rgba(255, 173, 51, 0.06);
-        color: #ffd18c;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .known-issues-close-btn:hover {
-        border-color: rgba(255, 173, 51, 0.6);
-        background: rgba(255, 173, 51, 0.12);
-      }
-      .known-issues-list {
-        margin: 0;
-        padding-left: 18px;
-      }
-      .known-issues-list li {
-        margin-bottom: 8px;
-        line-height: 1.5;
-        color: #c9ced6;
-      }
-      .mobile-section {
-        margin: 10px 0 4px;
-        padding: 14px 14px 12px;
-        border: 1.5px solid rgba(255,255,255,0.08);
-        border-radius: 12px;
-        background: rgba(255,255,255,0.02);
-        text-align: left;
-      }
-      .mobile-section-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 4px;
-      }
-      .mobile-section-header svg {
-        width: 16px;
-        height: 16px;
-        color: #00ffaa;
-        flex-shrink: 0;
-      }
-      .mobile-section-title {
-        font-size: 13px;
-        font-weight: 600;
-        color: #e0e0e0;
-        margin: 0;
-      }
-      .mobile-section-desc {
-        font-size: 11.5px;
-        color: #666;
-        margin: 0 0 10px 24px;
-        line-height: 1.4;
-      }
-      .mobile-app-buttons {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .mobile-app-btn {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        flex: 1;
-        min-width: 120px;
-        padding: 9px 12px;
-        border: 1.5px solid rgba(255,255,255,0.1);
-        border-radius: 9px;
-        background: transparent;
-        text-decoration: none;
-        color: #a0a0a0;
-        font-size: 12px;
-        font-weight: 500;
-        font-family: inherit;
-        cursor: pointer;
-        transition: border-color 0.2s, background 0.2s, color 0.2s;
-      }
-      .mobile-app-btn:hover {
-        border-color: #00ffaa;
-        background: rgba(0,255,170,0.07);
-        color: #00ffaa;
-      }
-      .mobile-app-btn:hover svg { color: #00ffaa; }
-      .mobile-app-btn svg {
-        width: 18px;
-        height: 18px;
-        flex-shrink: 0;
-        color: #777;
-        transition: color 0.2s;
-      }
-      .mobile-app-btn-label {
-        display: flex;
-        flex-direction: column;
-        line-height: 1.25;
-      }
-      .mobile-app-btn-label .store-sub {
-        font-size: 10px;
-        opacity: 0.65;
-        font-weight: 400;
-      }
-      .mobile-app-btn-label .store-name {
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      /* Стили для кнопки извлечения */
-      #extract-container {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin: 0 4px;
-        padding: 4px 8px;
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 6px;
-        background: rgba(255,255,255,0.03);
-        flex: 1;
-        max-width: 160px;
-      }
-      #extract-container label {
-        font-size: 11px;
-        font-weight: 500;
-        color: #888;
-        white-space: nowrap;
-        margin-right: 2px;
-      }
-      #extractBtn {
-        padding: 3px 10px;
-        background: #00ffaa;
-        color: #0f0f0f;
-        border: none;
-        border-radius: 4px;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 12px;
-        font-family: inherit;
-        transition: opacity 0.2s, background 0.2s;
-        white-space: nowrap;
-      }
-      #extractBtn:hover {
-        opacity: 0.85;
-      }
-      #extractBtn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      #extractMenu {
-        display: none;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: #1e1e1e;
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 8px;
-        padding: 4px 0;
-        min-width: 180px;
-        z-index: 100;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-      }
-      #extractMenu .extract-item {
-        width: 100%;
-        padding: 6px 14px;
-        background: none;
-        border: none;
-        color: #c8c8c8;
-        cursor: pointer;
-        text-align: left;
-        font-size: 13px;
-        font-family: inherit;
-        transition: background 0.15s;
-      }
-      #extractMenu .extract-item:hover {
-        background: rgba(255,255,255,0.06);
-      }
-      .extract-container-wrap {
-        position: relative;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div id="onboarding-overlay" role="dialog" aria-modal="true"
-        aria-label="Welcome tour">
-        <iframe id="onboarding-frame" src="onboarding.html" title="Welcome tour"
-          sandbox="allow-scripts"></iframe>
-      </div>
-      <div id="known-issues-modal" role="dialog" aria-modal="true"
-        aria-hidden="true" aria-labelledby="known-issues-title">
-        <div class="known-issues-card">
-          <div class="known-issues-header">
-            <h3 id="known-issues-title" class="known-issues-title"
-              data-i18n="knownIssuesTitle">Known Issues</h3>
-            <button id="known-issues-close-btn" class="known-issues-close-btn"
-              type="button" data-i18n="knownIssuesClose">Close</button>
-          </div>
-          <ul class="known-issues-list">
-            <li data-i18n="knownIssuesItem1">Claude's website changed, so
-              the nav bar button is no longer available. We're working on a
-              fix, but until then, we added a temporary button to open chat
-              history, or you can use Ctrl + K.</li>
-            <li data-i18n="knownIssuesItem2">Thanks for your patience.</li>
-          </ul>
-        </div>
-      </div>
-
-      <nav class="toolbar" id="toolbar">
-        <button class="btn btn-menu" id="menuBtn" aria-haspopup="menu" aria-expanded="false">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="3" y1="4" x2="13" y2="4" />
-            <line x1="3" y1="8" x2="13" y2="8" />
-            <line x1="3" y1="12" x2="13" y2="12" />
-          </svg>
-        </button>
-        <div id="menuDropdown" class="menu-dropdown" role="menu">
-          <button class="menu-item" id="welcomeTourBtn" role="menuitem">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="8" cy="8" r="6" />
-              <line x1="8" y1="8" x2="8" y2="4" />
-              <line x1="8" y1="10" x2="8" y2="10.5" />
-            </svg>
-            Welcome Tour
-          </button>
-          <button class="menu-item known-issues-btn" id="knownIssuesBtn" role="menuitem">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="8" cy="8" r="6" />
-              <path d="M8 12 L8 8 L8 5" />
-            </svg>
-            Known Issues
-          </button>
-          <hr class="menu-divider" />
-          <a class="menu-item" href="https://github.com/LeonidYasin/AI-Side-Panel-Extension" target="_blank" role="menuitem">
-            <svg viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            GitHub Repository
-          </a>
-          <a class="menu-item" href="mailto:sunmorohon@gmail.com" role="menuitem">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 3L8 7L14 3" />
-              <rect x="2" y="3" width="12" height="10" rx="1" />
-            </svg>
-            Contact Developer
-          </a>
-          <hr class="menu-divider" />
-          <button class="menu-item" id="settingsBtn" role="menuitem">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="8" cy="8" r="2" />
-              <path d="M8 1.5V3" />
-              <path d="M8 13V14.5" />
-              <path d="M14.5 8H13" />
-              <path d="M3 8H1.5" />
-              <path d="M12.3 3.7L11.2 4.8" />
-              <path d="M4.8 11.2L3.7 12.3" />
-              <path d="M12.3 12.3L11.2 11.2" />
-              <path d="M4.8 4.8L3.7 3.7" />
-            </svg>
-            Settings
-          </button>
-        </div>
-        <!-- Новая кнопка "Извлечь" рядом с меню -->
-        <div class="extract-container-wrap">
-          <button id="extractBtn" style="padding: 4px 12px; background: #00ffaa; color: #0f0f0f; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px;">
-            🧩 Извлечь ▾
-          </button>
-          <div id="extractMenu">
-            <button class="extract-item" data-action="youtube">📝 Транскрипт с YouTube</button>
-            <button class="extract-item" data-action="page">📄 Текст страницы</button>
-            <button class="extract-item" data-action="selection">✂️ Выделенный текст</button>
-          </div>
-        </div>
-        <button class="btn btn-service" id="serviceBtn">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <path d="M4 6L8 10L12 6" />
-          </svg>
-        </button>
-      </nav>
-
-      <main id="main-content">
-        <iframe id="service-frame" src="https://chat.deepseek.com/" style="width:100%; height:100%; border:none;"></iframe>
-      </main>
-    </div>
-
-    <script src="sidepanel-modular.js"></script>
-    <script>
-      // Инициализация кнопки извлечения (не перекрывает существующую логику)
-      document.addEventListener('DOMContentLoaded', function() {
-        const extractBtn = document.getElementById('extractBtn');
-        const extractMenu = document.getElementById('extractMenu');
-        const iframe = document.getElementById('service-frame');
-
-        if (!extractBtn) return;
-
-        // Toggle menu
-        extractBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          extractMenu.style.display = extractMenu.style.display === 'block' ? 'none' : 'block';
-        });
-
-        // Close menu on click outside
-        document.addEventListener('click', function(e) {
-          if (!e.target.closest('.extract-container-wrap')) {
-            extractMenu.style.display = 'none';
-          }
-        });
-
-        // Handle menu item clicks
-        document.querySelectorAll('.extract-item').forEach(item => {
-          item.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const action = this.dataset.action;
-            extractMenu.style.display = 'none';
-            
-            if (action === 'youtube') {
-              handleYouTubeTranscript();
-            } else {
-              alert('Функция в разработке: ' + action);
-            }
-          });
-        });
-
-        function handleYouTubeTranscript() {
-          if (typeof chrome === 'undefined' || !chrome.tabs) {
-            alert('Нет доступа к API браузера');
-            return;
-          }
-
-          chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-            const tab = tabs[0];
-            if (!tab || !tab.url.includes('youtube.com/watch')) {
-              alert('Пожалуйста, откройте видео на YouTube');
-              return;
-            }
-
-            const urlParams = new URLSearchParams(new URL(tab.url).search);
-            const videoId = urlParams.get('v');
-            if (!videoId) {
-              alert('Не удалось найти ID видео');
-              return;
-            }
-
-            extractBtn.textContent = '⏳';
-            extractBtn.disabled = true;
-
-            chrome.runtime.sendMessage(
-              { action: 'getTranscript', videoId: videoId },
-              function(response) {
-                extractBtn.textContent = '🧩 Извлечь ▾';
-                extractBtn.disabled = false;
-
-                if (chrome.runtime.lastError) {
-                  alert('Ошибка связи с расширением');
-                  return;
-                }
-
-                if (response && response.success) {
-                  const transcript = response.transcript;
-                  if (iframe && iframe.contentWindow) {
-                    iframe.contentWindow.postMessage({
-                      type: 'INSERT_TRANSCRIPT',
-                      text: transcript
-                    }, 'https://chat.deepseek.com');
-                    alert('✅ Транскрипт отправлен в DeepSeek!');
-                  } else {
-                    alert('⚠️ iframe не найден');
-                  }
-                } else {
-                  alert('❌ Ошибка: ' + (response?.error || 'Неизвестная ошибка'));
-                }
-              }
-            );
-          });
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; background: #0f0f0f; color: #fff; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }
+ #toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #2a2a2a;
+            flex-shrink: 0;
+            min-height: 44px;
         }
-      });
+        #toolbar span { font-size: 13px; font-weight: 500; color: #888; }
+        #extractBtn {
+            padding: 6px 14px;
+            background: #00ffaa;
+            color: #0f0f0f;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        #extractBtn:hover { opacity: 0.85; }
+        #extractBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #status { font-size: 12px; color: #666; margin-left: auto; }
+        #deepseek-frame { width: 100%; height: calc(100% - 44px); border: none; }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <span>🧠 AI</span>
+        <button id="extractBtn">📝 Извлечь транскрипт</button>
+        <span id="status"></span>
+    </div>
+    <iframe id="deepseek-frame" src="https://chat.deepseek.com/"></iframe>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('extractBtn');
+            const status = document.getElementById('status');
+            const iframe = document.getElementById('deepseek-frame');
+
+            function setStatus(text, isError = false) {
+                status.textContent = text;
+                status.style.color = isError ? '#ff6b6b' : '#888';
+            }
+
+            btn.addEventListener('click', function() {
+                if (typeof chrome === 'undefined' || !chrome.tabs) {
+                    setStatus('❌ Ошибка: нет доступа к API', true);
+                    return;
+                }
+
+                setStatus('⏳ Проверка...');
+                btn.disabled = true;
+
+                chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+                    const tab = tabs[0];
+                    if (!tab || !tab.url.includes('youtube.com/watch')) {
+                        setStatus('❌ Откройте видео на YouTube', true);
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    const urlParams = new URLSearchParams(new URL(tab.url).search);
+                    const videoId = urlParams.get('v');
+                    if (!videoId) {
+                        setStatus('❌ Не найден ID видео', true);
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    setStatus('⏳ Загрузка транскрипта...');
+
+                    chrome.runtime.sendMessage(
+                        { action: 'getTranscript', videoId: videoId },
+                        function(response) {
+                            btn.disabled = false;
+
+                            if (chrome.runtime.lastError) {
+                                setStatus('❌ Ошибка связи', true);
+                                return;
+                            }
+
+                            if (response && response.success) {
+                                const transcript = response.transcript;
+                                if (iframe && iframe.contentWindow) {
+                                    iframe.contentWindow.postMessage({
+                                        type: 'INSERT_TRANSCRIPT',
+                                        text: transcript
+                                    }, 'https://chat.deepseek.com');
+                                    setStatus('✅ Отправлено!');
+                                } else {
+                                    setStatus('⚠️ iframe не найден', true);
+                                }
+                            } else {
+ setStatus('❌ ' + (response?.error || 'Ошибка'), true);
+                            }
+                        }
+                    );
+                });
+            });
+        });
     </script>
-  </body>
+</body>
 </html>
