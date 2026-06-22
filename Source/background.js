@@ -224,29 +224,24 @@ chrome.contextMenus?.onClicked?.addListener((info, tab) => {
   if (!info.menuItemId.startsWith(CONTEXT_MENU_ROOT_ID)) return;
 
   const parts = info.menuItemId.split('/');
-  if (parts.length < 3) return; // require Service + Action selection
+  if (parts.length < 3) return; // require Service + Action
   const serviceId = parts[1];
   const actionId = parts[2];
 
-  const service = SERVICE_PRESETS.find((s) => s.id === serviceId);
-  if (!service) return;
+  const payload = {
+    serviceId,
+    actionId,
+    text: info.selectionText || '',
+    pageUrl: tab?.url,
+    pageTitle: tab?.title,
+  };
 
-  const selectedText = info.selectionText || '';
-  const action = getAllActions(cachedCustomServiceSettings).find((a) => a.id === actionId);
-  if (!action) return;
-
-  // Open side panel first, then send the message
-  openSidePanelForTab(tab).then(() => {
-    sendCustomServiceToPanel({
-      serviceId,
-      actionId,
-      text: selectedText,
-      url: tab?.url || ''
-    });
-  });
+  if (tab?.id) {
+    openSidePanelForTab(tab).then(() => sendCustomServiceToPanel(payload));
+  }
 });
 
-// Add handler for YouTube transcript requests
+// --- НОВЫЙ ОБРАБОТЧИК ДЛЯ ТРАНСКРИПТА ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getTranscript') {
         const videoId = request.videoId;
@@ -262,6 +257,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch(error => {
                 sendResponse({ success: false, error: error.message });
             });
-        return true;
+        return true; // Сохраняем канал открытым для асинхронного ответа
     }
 });
+
+console.log('AI Side Panel Extension loaded');
