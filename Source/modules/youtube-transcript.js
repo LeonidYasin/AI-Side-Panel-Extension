@@ -37,6 +37,8 @@ export async function fetchYouTubeTranscript(videoId) {
             if (text) transcript.push(text);
         }
 
+        if (transcript.length === 0) throw new Error("Транскрипт пуст");
+
         return transcript.join(" ");
 
     } catch (error) {
