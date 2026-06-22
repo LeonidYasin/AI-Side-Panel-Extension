@@ -5,17 +5,10 @@
   "description": "DeepSeek in side panel with YouTube transcript extraction",
   "permissions": [
     "sidePanel",
-    "activeTab",
-    "scripting",
-    "storage",
-    "contextMenus",
-    "declarativeNetRequest"
+    "activeTab"
   ],
   "host_permissions": [
-    "https://chat.deepseek.com/*",
-    "https://www.youtube.com/*",
-    "http://localhost/*",
-    "http://127.0.0.1/*"
+    "https://chat.deepseek.com/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -26,15 +19,6 @@
   },
   "action": {
     "default_title": "AI Side Panel"
-  },
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "ruleset_1",
-        "enabled": true,
-        "path": "rules.json"
-      }
-    ]
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
