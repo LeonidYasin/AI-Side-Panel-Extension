@@ -7,17 +7,22 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; overflow: hidden; background: #0f0f0f; color: #fff; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }
- #toolbar {
+        
+        #toolbar {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             padding: 8px 12px;
             background: #1a1a1a;
             border-bottom: 1px solid #2a2a2a;
             flex-shrink: 0;
             min-height: 44px;
         }
-        #toolbar span { font-size: 13px; font-weight: 500; color: #888; }
+        #toolbar .label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #888;
+        }
         #extractBtn {
             padding: 6px 14px;
             background: #00ffaa;
@@ -28,18 +33,32 @@
             font-size: 13px;
             cursor: pointer;
             transition: opacity 0.2s;
+            white-space: nowrap;
         }
         #extractBtn:hover { opacity: 0.85; }
         #extractBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-        #status { font-size: 12px; color: #666; margin-left: auto; }
-        #deepseek-frame { width: 100%; height: calc(100% - 44px); border: none; }
+        #status {
+            font-size: 12px;
+            color: #666;
+            margin-left: auto;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        #deepseek-frame {
+            width: 100%;
+            height: calc(100% - 44px);
+            border: none;
+        }
     </style>
 </head>
 <body>
     <div id="toolbar">
-        <span>🧠 AI</span>
+        <span class="label">🧠 AI</span>
         <button id="extractBtn">📝 Извлечь транскрипт</button>
-        <span id="status"></span>
+        <span id="status">Готов</span>
     </div>
     <iframe id="deepseek-frame" src="https://chat.deepseek.com/"></iframe>
 
@@ -55,59 +74,42 @@
             }
 
             btn.addEventListener('click', function() {
-                if (typeof chrome === 'undefined' || !chrome.tabs) {
-                    setStatus('❌ Ошибка: нет доступа к API', true);
+                if (typeof chrome === 'undefined' || !chrome.runtime) {
+                    setStatus('❌ Ошибка: нет API', true);
                     return;
                 }
 
                 setStatus('⏳ Проверка...');
                 btn.disabled = true;
 
-                chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-                    const tab = tabs[0];
-                    if (!tab || !tab.url.includes('youtube.com/watch')) {
-                        setStatus('❌ Откройте видео на YouTube', true);
+                // Отправляем сообщение в background
+                chrome.runtime.sendMessage(
+                    { action: 'getTranscript' },
+                    function(response) {
                         btn.disabled = false;
-                        return;
-                    }
-
-                    const urlParams = new URLSearchParams(new URL(tab.url).search);
-                    const videoId = urlParams.get('v');
-                    if (!videoId) {
-                        setStatus('❌ Не найден ID видео', true);
-                        btn.disabled = false;
-                        return;
-                    }
-
-                    setStatus('⏳ Загрузка транскрипта...');
-
-                    chrome.runtime.sendMessage(
-                        { action: 'getTranscript', videoId: videoId },
-                        function(response) {
-                            btn.disabled = false;
-
-                            if (chrome.runtime.lastError) {
-                                setStatus('❌ Ошибка связи', true);
-                                return;
-                            }
-
-                            if (response && response.success) {
-                                const transcript = response.transcript;
-                                if (iframe && iframe.contentWindow) {
-                                    iframe.contentWindow.postMessage({
-                                        type: 'INSERT_TRANSCRIPT',
-                                        text: transcript
-                                    }, 'https://chat.deepseek.com');
-                                    setStatus('✅ Отправлено!');
-                                } else {
-                                    setStatus('⚠️ iframe не найден', true);
-                                }
-                            } else {
- setStatus('❌ ' + (response?.error || 'Ошибка'), true);
-                            }
+                        
+                        if (chrome.runtime.lastError) {
+                            setStatus('❌ ' + chrome.runtime.lastError.message, true);
+                            console.error('Runtime error:', chrome.runtime.lastError);
+                            return;
                         }
-                    );
-                });
+
+                        if (response && response.success) {
+                            const transcript = response.transcript;
+                            if (iframe && iframe.contentWindow) {
+                                iframe.contentWindow.postMessage({
+                                    type: 'INSERT_TRANSCRIPT',
+                                    text: transcript
+                                }, 'https://chat.deepseek.com');
+                                setStatus('✅ Отправлено!');
+                            } else {
+                                setStatus('⚠️ iframe не найден', true);
+                            }
+                        } else {
+                            setStatus('❌ ' + (response?.error || 'Ошибка'), true);
+                        }
+                    }
+                );
             });
         });
     </script>
