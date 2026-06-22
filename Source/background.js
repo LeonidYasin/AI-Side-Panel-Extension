@@ -32,51 +32,8 @@ function contextMenusCreate(createProperties) {
 
 function initiate () {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error) => console.error(error));
-    chrome.runtime.onInstalled.addListener(function () {
-        chrome.declarativeNetRequest.updateDynamicRules({
-            removeRuleIds: [1],
-            addRules: [{
-                    id: 1,
-                    priority: 1,
-                    action: {
-                        type: "modifyHeaders",
-                        responseHeaders: [
-                            {
-                                header: "content-security-policy",
-                                operation: "remove"
-                            },
-                            {
-                                header: "x-frame-options",
-                                operation: "remove"
-                            },
-                            {
-                                header: "frame-options",
-                                operation: "remove"
-                            },
-                            {
-                                header: "frame-ancestors",
-                                operation: "remove"
-                            },
-                            {
-                                header:"X-Content-Type-Options",
-                                operation: "remove"
-                            },
-                            {
-                                header: "access-control-allow-origin",
-                                operation: "set",
-                                value: "*"
-                            }
-                        ]
-                    },
-                    condition: {
-                        resourceTypes: [
-                            "main_frame",
-                            "sub_frame"
-                        ]
-                    }
-                }]
-        });
-    });
+    // Удаляем устаревший вызов updateDynamicRules - теперь правила загружаются из rules.json
+    // chrome.declarativeNetRequest.updateDynamicRules(...)
     primeCustomServiceSettings().then(() => rebuildCustomContextMenus());
 };
 
@@ -225,37 +182,33 @@ chrome.contextMenus?.onClicked?.addListener((info, tab) => {
 
   const parts = info.menuItemId.split('/');
   if (parts.length < 3) return; // require Service + Action
+
   const serviceId = parts[1];
   const actionId = parts[2];
-  const selectedText = info.selectionText?.trim();
-  if (!selectedText) return;
+  if (!serviceId || !actionId) return;
+  if (!info.selectionText) return;
 
+  const normalized = normalizeSettings(cachedCustomServiceSettings);
   const service = SERVICE_PRESETS.find((s) => s.id === serviceId);
   if (!service) return;
 
-  const normalized = normalizeSettings(cachedCustomServiceSettings);
   const action = getAllActions(normalized).find((a) => a.id === actionId);
   if (!action) return;
 
-  const baseUrl = service.id === 'custom' ? normalized.customBaseUrl : service.url;
-  if (!baseUrl) return;
-
-  const url = buildServiceUrl(baseUrl, selectedText, { action: actionId, service: serviceId });
+  let baseUrl = service.baseUrl;
+  if (serviceId === 'custom' && normalized.customBaseUrl) {
+    baseUrl = normalized.customBaseUrl;
+  }
+  const url = buildServiceUrl(baseUrl, serviceId, actionId, info.selectionText);
   if (!url) return;
 
-  // Send to side panel
-  sendCustomServiceToPanel({ url, label: service.label, action: action.label });
-
-  // Open side panel
-  if (tab) {
-    openSidePanelForTab(tab);
-  }
+  openSidePanelForTab(tab).then(() => {
+    sendCustomServiceToPanel({ url, text: info.selectionText });
+  });
 });
 
-// --- ОБРАБОТЧИК ДЛЯ ТРАНСКРИПТА YouTube ---
+// Обработчик для получения транскрипта YouTube
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('Message received in background:', request);
-    
     if (request.action === 'getTranscript') {
         const videoId = request.videoId;
         if (!videoId) {
@@ -263,18 +216,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
         }
 
-        console.log('Fetching transcript for video:', videoId);
-        
         fetchYouTubeTranscript(videoId)
             .then(transcript => {
-                console.log('Transcript fetched, length:', transcript?.length || 0);
                 sendResponse({ success: true, transcript });
             })
             .catch(error => {
-                console.error('Error fetching transcript:', error);
-                sendResponse({ success: false, error: error.message || 'Ошибка получения транскрипта' });
+                sendResponse({ success: false, error: error.message });
             });
-        return true; // Сохраняем канал открытым для асинхронного ответа
+        return true;
     }
 });
 
